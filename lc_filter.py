@@ -6,6 +6,8 @@ from concurrent.futures import ProcessPoolExecutor, wait, ALL_COMPLETED
 from multiprocessing import Manager
 from queue import Empty
 from tqdm import tqdm
+from pathlib import Path
+import os
 
 from loguru import logger
 
@@ -15,9 +17,34 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=str, required=True)
     parser.add_argument("--out_pattern", type=str, default="out")
-    parser.add_argument("--config", type=str, default="config.yaml")
+    parser.add_argument("--config", type=str, default=None, help='Path to config file')
     parser.add_argument("--num_processes", type=int, default=4)
-    return parser.parse_args()
+    args = parser.parse_args()
+    
+    # Determine config path
+    if args.config is not None:
+        # Use user-provided config path
+        config_path = args.config
+    else:
+        # Get the directory where the script is located
+        if getattr(sys, 'frozen', False):
+            # If running as a bundled executable
+            script_dir = Path(sys.executable).parent
+        else:
+            # If running as a script
+            script_dir = Path(os.path.dirname(os.path.abspath(__file__)))
+        
+        # Use default config from script directory
+        config_path = os.path.join(script_dir, 'config.yaml')
+    
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Config file not found at {config_path}")
+    
+    # Read the config
+    with open(config_path, "r") as f:
+        args.config = yaml.safe_load(f)
+    
+    return args
 
 def process_sequence(record, queue_out, **kwargs):
     """Process a single sequence and put result in queue"""
@@ -41,14 +68,9 @@ def main():
     # info about the parameters
     logger.info(f"Input: {args.input}")
     logger.info(f"Out pattern: {args.out_pattern}")
-    logger.info(f"Config: {args.config}")
-
-    # load config
-    with open(args.config, "r") as f:
-        config = yaml.safe_load(f)
 
     # info about the config
-    logger.info(f"Config: {config}")
+    logger.info(f"Config: {args.config}")
 
     # Create progress bars
     pbar_read = tqdm(desc="Reading sequences", unit=" reads")
@@ -84,7 +106,7 @@ def main():
             with ProcessPoolExecutor(max_workers=args.num_processes) as executor:
                 pbar_process = tqdm(desc="Processing sequences", unit=" reads", total=len(records))
                     
-                futures = [executor.submit(process_sequence, record, queue_output, **config["metrics"]) for record in records]
+                futures = [executor.submit(process_sequence, record, queue_output, **args.config["metrics"]) for record in records]
                 for future in futures:
                     future.result()
                     pbar_process.update(1)
@@ -118,7 +140,7 @@ def main():
                             wanted_regions = metrics.get_wanted_regions(result["metrics"]["vector_kmers_avg_qual_change"].size, result["metrics"]["failed_regions"])
                             logger.trace(f"{seq_id} wanted regions: {wanted_regions}")
 
-                            total_retained = sum([region[1] + config["metrics"]["kmer_length"] - region[0] for region in wanted_regions])
+                            total_retained = sum([region[1] + args.config["metrics"]["kmer_length"] - region[0] for region in wanted_regions])
                             total_failed = result['length'] - total_retained
 
                             record_stats = [
@@ -130,7 +152,7 @@ def main():
 
                             bed_entries = []
                             for kstart, kend in wanted_regions:
-                                bed_entries.append(f"{seq_id}\t{kstart}\t{kend + config['metrics']['kmer_length']}")
+                                bed_entries.append(f"{seq_id}\t{kstart}\t{kend + args.config['metrics']['kmer_length']}")
                             f_bed.write("\n".join(bed_entries))
                             f_bed.write("\n")
                             f_bed.flush()

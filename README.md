@@ -5,7 +5,7 @@
 For processing reads from fastq file:
 
 ```bash
-python lc_filter.py --input example_data/reads.fastq.gz --output example_data/results
+python lc_filter.py --input example_data/reads.fastq.gz --out_pattern example_data/results
 ```
 
 For extracting reads later
@@ -26,6 +26,14 @@ python lc_image.py --input example_data/reads.fastq.gz --interest_id 95db81aa-9d
 python lc_image.py --input example_data/reads.fastq.gz --interest_file example_data/interest.txt
 ```
 
-## Configuration
+## Container creation
 
-TBD
+```bash
+sudo $(which singularity) build lc_filter.sif Singularity.def
+```
+
+## Example run with singularity
+
+```bash
+singularity run lc_filter.sif --input example_data/reads.fastq.gz --out_pattern example_data/results
+```

@@ -1,0 +1,33 @@
+Bootstrap: docker
+From: python:3.9-slim
+
+%files
+    lc_filter.py /app/
+    lc_image.py /app/
+    metrics.py /app/
+    config.yaml /app/
+
+%post
+    apt-get update && apt-get install -y --no-install-recommends \
+        gcc \
+        python3-dev \
+        && rm -rf /var/lib/apt/lists/*
+
+    pip install --no-cache-dir \
+        tqdm \
+        plotly \
+        pyyaml \
+        loguru \
+        numpy
+
+%environment
+    export PYTHONPATH=/app:$PYTHONPATH
+    export LC_ALL=C
+
+%runscript
+    python /app/lc_filter.py "$@"
+
+%labels
+    Author Ivan Chudinov
+    Version v0.1
+    Description Low complexity filter for ONT FASTQ sequences 
