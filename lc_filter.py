@@ -116,12 +116,16 @@ def main():
                             # Write result to file
                             seq_id = result['id']
                             wanted_regions = metrics.get_wanted_regions(result["metrics"]["vector_kmers_avg_qual_change"].size, result["metrics"]["failed_regions"])
+                            logger.trace(f"{seq_id} wanted regions: {wanted_regions}")
+
+                            total_retained = sum([region[1] + config["metrics"]["kmer_length"] - region[0] for region in wanted_regions])
+                            total_failed = result['length'] - total_retained
 
                             record_stats = [
                                 seq_id, 
                                 result['length'], 
-                                len(result["metrics"]["failed_regions"]), sum([region[1] + config["metrics"]["kmer_length"] - region[0] + 1 for region in result["metrics"]["failed_regions"]]), 
-                                len(wanted_regions), sum([region[1] + config["metrics"]["kmer_length"] - region[0] + 1 for region in wanted_regions])
+                                len(result["metrics"]["failed_regions"]), total_failed, 
+                                len(wanted_regions), total_retained
                             ]
 
                             bed_entries = []

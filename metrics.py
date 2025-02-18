@@ -181,12 +181,12 @@ def calculate_mertics(
     return result
 
 
-def get_wanted_regions(sequence_length, dont_want_list):
+def get_wanted_regions(kmer_array_size, dont_want_list):
     """
     Get regions of the sequence that are not in the `dont_want_list`.
 
     Args:
-        sequence_length (int): Total length of the sequence.
+        kmer_array_size (int): Total length of the kmer vector array.
         dont_want_list (list): List of [start, end] ranges to exclude.
 
     Returns:
@@ -207,7 +207,7 @@ def get_wanted_regions(sequence_length, dont_want_list):
         prev_end = max(prev_end, end + 1)  # Update the end of the last excluded range
     
     # Add the region after the last excluded range
-    if prev_end < sequence_length:
-        wanted_regions.append([prev_end, sequence_length - 1])
+    if prev_end < kmer_array_size:
+        wanted_regions.append([prev_end, kmer_array_size - 1])
     
     return wanted_regions
