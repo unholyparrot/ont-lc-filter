@@ -1,0 +1,17 @@
+metrics:
+  # length of the kmer within the reads
+  kmer_length: 51
+  # window size for kmers
+  window_size: 510
+  # overlap between windows
+  window_overlap: 400
+  # max outer downgrade
+  max_outer_downgrade: 0.33
+  # min inner complexity
+  min_inner_complexity: 0.05
+  # max inner downgrade
+  max_inner_downgrade: 0.66
+  # desired q value
+  desired_q_value: 10
+  # min q change
+  min_q_change: 2
