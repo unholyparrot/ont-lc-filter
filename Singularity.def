@@ -2,10 +2,10 @@ Bootstrap: docker
 From: python:3.9-slim
 
 %files
-    lc_filter.py /app/
-    lc_image.py /app/
-    metrics.py /app/
-    config.yaml /app/
+    lc_filter.py /usr/local/bin/lc_filter.py
+    lc_image.py /usr/local/bin/lc_image.py
+    metrics.py /usr/local/bin/metrics.py
+    config.yaml /usr/local/bin/config.yaml
 
 %post
     apt-get update && apt-get install -y --no-install-recommends \
@@ -20,12 +20,22 @@ From: python:3.9-slim
         loguru \
         numpy
 
-%environment
-    export PYTHONPATH=/app:$PYTHONPATH
-    export LC_ALL=C
+    # Make scripts executable
+    chmod +x /usr/local/bin/*.py
 
-%runscript
-    python /app/lc_filter.py "$@"
+    # Create wrapper scripts that use current directory
+    echo '#!/bin/bash' > /usr/local/bin/run_filter
+    echo 'python /usr/local/bin/lc_filter.py "$@"' >> /usr/local/bin/run_filter
+    chmod +x /usr/local/bin/run_filter
+
+    echo '#!/bin/bash' > /usr/local/bin/run_image
+    echo 'python /usr/local/bin/lc_image.py "$@"' >> /usr/local/bin/run_image
+    chmod +x /usr/local/bin/run_image
+
+%environment
+    export PYTHONPATH=/usr/local/bin:$PYTHONPATH
+    export PATH=/usr/local/bin:$PATH
+    export LC_ALL=C
 
 %labels
     Author Ivan Chudinov
