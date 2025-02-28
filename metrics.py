@@ -144,15 +144,15 @@ def calculate_mertics(
         qual_ch = vector_kmers_avg_qual_change[window_left:window_right]
     
         # если изменения к-мер пропали
-        decision_outer = any(outer <= max_outer_downgrade)
+        decision_outer = bool(any(outer <= max_outer_downgrade))
         # если сложность падает до минимально разрешенного размера или перепад сложности более чем на 0.66
-        decision_inner = any(inner <= min_inner_complexity) or max(inner) - min(inner) >= max_inner_downgrade
+        decision_inner = bool(any(inner <= min_inner_complexity)) or bool(max(inner) - min(inner) >= max_inner_downgrade)
         # ищем, где качество к-меры падает ниже требуемого значения
         low_q_arr_condition = qual <= desired_q_value
         # после чего выкидываем такой участок, если более половины окна меньше порогового значения
-        decision_qual = len(qual[low_q_arr_condition]) >= 0.5 * (window_right - window_left)
+        decision_qual = bool(len(qual[low_q_arr_condition]) >= 0.5 * (window_right - window_left))
         # условие на слабую скорость изменения такого качества в этом участке
-        decision_qual_ch = any(abs(qual_ch[low_q_arr_condition]) <= min_q_change)
+        decision_qual_ch = bool(any(abs(qual_ch[low_q_arr_condition]) <= min_q_change))
     
         if (decision_outer and decision_inner) or (decision_qual and decision_qual_ch):
             logger.trace(f"{read_id} window {[window_left, window_right]} passed with {[decision_outer, decision_inner, decision_qual, decision_qual_ch]}")
